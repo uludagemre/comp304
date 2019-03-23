@@ -1,8 +1,8 @@
 /*
  * shelldon interface program
 
-KUSIS ID: PARTNER NAME: 
-KUSIS ID: PARTNER NAME:
+KUSIS ID: 50209 PARTNER NAME: Emre Uludağ 
+KUSIS ID: 31760 PARTNER NAME: Arda Arslan
 
  */
 
