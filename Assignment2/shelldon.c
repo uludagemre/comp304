@@ -30,47 +30,54 @@ int main(void)
   int shouldrun = 1;
   int shouldRedirect;
   int shouldAppend;
+  FILE *mystdout = stdout;
 
 	
   int i, upper;
+  int first_time = 1;
 		
   while (shouldrun){            		/* Program terminates normally inside setup */
     background = 0;
+    shouldRedirect = 0;
+    shouldAppend = 0;
+
+    if (first_time != 1) {
+      fclose(stdout);
+    }
+    else {
+      first_time = 1;
+    }
+    stdout = mystdout;
 		
     shouldrun = parseCommand(inputBuffer,args,&background,&shouldRedirect,&shouldAppend);       /* get next command */
-		
+
     if (strncmp(inputBuffer, "exit", 4) == 0)
       shouldrun = 0;     /* Exiting from shelldon*/
-
 
     //Below is the answer of the first part
 
     if (shouldrun) {
-        int pid = fork();
-        if (pid == 0) { // child
+        child = fork();
+        if (child == 0) { // child
             char path[500];
             char filename[500];
-            FILE* outputFile;
+            
             int count = 0;
-            strcpy(path, "/bin/");
-            if ((shouldRedirect) && (shouldAppend)) {
-              
 
-              
+            if ((shouldRedirect == 1) && (shouldAppend == 1)) {
               while (true) {
-              
                 if (strncmp(args[count], ">>", 2) == 0) {
-              
                   strcpy(filename, args[count+1]);
                   args[count] = NULL;
                   break;
                 }
                 count++;
               }
-
+              
               freopen(filename,"a+",stdout);
+              
             }
-             if ((shouldRedirect) && (!shouldAppend)) {
+            if ((shouldRedirect == 1) && (shouldAppend == 0)) {
               while (true) {
                 if (strncmp(args[count], ">", 1) == 0) {
                   strcpy(filename, args[count+1]);
@@ -79,14 +86,23 @@ int main(void)
                 }
                 count++;
               }
-              // printf("%s",stdout);
               freopen(filename,"w+",stdout);
             }
+
+            if (strcmp(args[0], "gcc") == 0) {
+              strcpy(path, "/usr/bin/");
+            }
+            else if (strcmp(args[0], "cd") == 0) {
+              strcpy(path, "/usr/bin/");
+              // DO STH
+            }
+            else {
+              strcpy(path, "/bin/");
+            }
+
             strcat(path, args[0]);
             execv(path, args);
-            // printf("%d\n",shouldRedirect);
-            // printf("%d\n",shouldAppend);
-          
+            exit(0);
         }
         else { // parent
             if (background == 1) {
