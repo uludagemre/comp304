@@ -32,10 +32,11 @@ int main(void)
   int shouldAppend;
   FILE *mystdout = stdout;
   char* history[1000];
-  int history_count[1000];
+  int history_count = 0;
 	
   int i, upper;
   int first_time = 1;
+  int k;
 		
   while (shouldrun){            		/* Program terminates normally inside setup */
     background = 0;
@@ -51,6 +52,14 @@ int main(void)
     stdout = mystdout;
 		
     shouldrun = parseCommand(inputBuffer,args,&background,&shouldRedirect,&shouldAppend);       /* get next command */
+
+    char **ptr = history;
+    ptr[history_count] = inputBuffer;
+    history_count++;
+
+    for (k=0; k<history_count; k++) {
+      printf("%s\n", ptr[k]);
+    }
 
     if (strncmp(inputBuffer, "exit", 4) == 0)
       shouldrun = 0;     /* Exiting from shelldon*/
