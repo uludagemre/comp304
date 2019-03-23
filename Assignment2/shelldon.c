@@ -31,8 +31,8 @@ int main(void)
   int shouldRedirect;
   int shouldAppend;
   FILE *mystdout = stdout;
-  char* history[10];
-  char* history_count[10];
+  char* history[1000];
+  int history_count[1000];
 	
   int i, upper;
   int first_time = 1;
@@ -113,7 +113,7 @@ int main(void)
             if (strcmp(args[0], "cd") == 0) {
               chdir(args[1]);
             }
-        } 
+        }
 
       /*
 	After reading user input, the steps are 
