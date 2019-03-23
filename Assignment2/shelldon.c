@@ -39,6 +39,9 @@ int main(void)
     if (strncmp(inputBuffer, "exit", 4) == 0)
       shouldrun = 0;     /* Exiting from shelldon*/
 
+
+    //Below is the answer of the first part
+
     if (shouldrun) {
         int pid = fork();
         if (pid == 0) { // child
@@ -46,24 +49,13 @@ int main(void)
             strcpy(path, "/bin/");
             strcat(path, args[0]);
             execv(path, args);
-            // exit(0);
-            // printf("%s\n", path);
-            // printf("%s\n", args[1]);
-            // char** p = args;
-            // p += 1;
-            // printf("%s\n", args);
-            
-            // printf("%s\n", args[0]);
-            // printf("%s", args[1]);
-            // printf("%s", args);
-            // printf("\nI'm child.\n");
         }
         else { // parent
             if (background == 1) {
-                printf("I'm parent and waiting.\n");
+                //This is the part when user puts '&' sign after the first command    
                 wait(NULL);
             }
-            printf("I'm parent and not waiting.\n");
+            //This is the part when user does not put '&' sign after the first command so there is no backgroung application is running 
         } 
 
       /*
