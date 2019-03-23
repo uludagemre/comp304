@@ -5,7 +5,7 @@ KUSIS ID: 50209 PARTNER NAME: Emre Uludağ
 KUSIS ID: 31760 PARTNER NAME: Arda Arslan
 
  */
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -18,7 +18,7 @@ KUSIS ID: 31760 PARTNER NAME: Arda Arslan
 
 #define MAX_LINE       80 /* 80 chars per line, per command, should be enough. */
 
-int parseCommand(char inputBuffer[], char *args[],int *background);
+int parseCommand(char inputBuffer[], char *args[],int *background, int *shouldRedirect, int *shouldAppend);
 
 int main(void)
 {
@@ -28,13 +28,16 @@ int main(void)
   pid_t child;            		/* process id of the child process */
   int status;           		/* result from execv system call*/
   int shouldrun = 1;
+  int shouldRedirect;
+  int shouldAppend;
+
 	
   int i, upper;
 		
   while (shouldrun){            		/* Program terminates normally inside setup */
     background = 0;
 		
-    shouldrun = parseCommand(inputBuffer,args,&background);       /* get next command */
+    shouldrun = parseCommand(inputBuffer,args,&background,&shouldRedirect,&shouldAppend);       /* get next command */
 		
     if (strncmp(inputBuffer, "exit", 4) == 0)
       shouldrun = 0;     /* Exiting from shelldon*/
@@ -46,9 +49,44 @@ int main(void)
         int pid = fork();
         if (pid == 0) { // child
             char path[500];
+            char filename[500];
+            FILE* outputFile;
+            int count = 0;
             strcpy(path, "/bin/");
+            if ((shouldRedirect) && (shouldAppend)) {
+              
+
+              
+              while (true) {
+              
+                if (strncmp(args[count], ">>", 2) == 0) {
+              
+                  strcpy(filename, args[count+1]);
+                  args[count] = NULL;
+                  break;
+                }
+                count++;
+              }
+
+              freopen(filename,"a+",stdout);
+            }
+             if ((shouldRedirect) && (!shouldAppend)) {
+              while (true) {
+                if (strncmp(args[count], ">", 1) == 0) {
+                  strcpy(filename, args[count+1]);
+                  args[count] = NULL;
+                  break;
+                }
+                count++;
+              }
+              // printf("%s",stdout);
+              freopen(filename,"w+",stdout);
+            }
             strcat(path, args[0]);
             execv(path, args);
+            // printf("%d\n",shouldRedirect);
+            // printf("%d\n",shouldAppend);
+          
         }
         else { // parent
             if (background == 1) {
@@ -76,7 +114,7 @@ int main(void)
  * will become null-terminated, C-style strings. 
  */
 
-int parseCommand(char inputBuffer[], char *args[],int *background)
+int parseCommand(char inputBuffer[], char *args[],int *background, int *shouldRedirect, int *shouldAppend)
 {
     int length,		/* # of characters in the command line */
       i,		/* loop index for accessing inputBuffer array */
@@ -151,9 +189,27 @@ int parseCommand(char inputBuffer[], char *args[],int *background)
 	  *background  = 1;
 	  inputBuffer[i-1] = '\0';
 	}
+      
+  if ((i != 0) && (inputBuffer[i-1] != '>') && (inputBuffer[i] == '>') && (inputBuffer[i+1] != '>'))  {
+    *shouldAppend = 0;
+    *shouldRedirect = 1;
+    
+    
+  }
+  if ((i != 0) && (inputBuffer[i-1] != '>') && (inputBuffer[i] == '>') && (inputBuffer[i+1] == '>'))  {
+    *shouldAppend = 1;
+    *shouldRedirect = 1;
+    
+  }
+  // if (strncmp(inputBuffer[i], ">>")){ 
+  //   *shouldAppend = 0;
+  //   *shouldRedirect = 1;
+  // }
+      
+      
       } /* end of switch */
     }    /* end of for */
-    
+  
     /**
      * If we get &, don't enter it in the args array
      */
