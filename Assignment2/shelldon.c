@@ -31,7 +31,8 @@ int main(void)
   int shouldRedirect;
   int shouldAppend;
   FILE *mystdout = stdout;
-
+  char* history[10];
+  char* history_count[10];
 	
   int i, upper;
   int first_time = 1;
@@ -93,8 +94,7 @@ int main(void)
               strcpy(path, "/usr/bin/");
             }
             else if (strcmp(args[0], "cd") == 0) {
-              strcpy(path, "/usr/bin/");
-              // DO STH
+              exit(0);
             }
             else {
               strcpy(path, "/bin/");
@@ -109,7 +109,10 @@ int main(void)
                 //This is the part when user puts '&' sign after the first command    
                 wait(NULL);
             }
-            //This is the part when user does not put '&' sign after the first command so there is no backgroung application is running 
+
+            if (strcmp(args[0], "cd") == 0) {
+              chdir(args[1]);
+            }
         } 
 
       /*
