@@ -101,13 +101,57 @@ int main(void)
             }
             else if (strcmp(args[0], "cd") == 0) {
               exit(0);
-            }else if (strcmp(args[0], "!!") == 0) {
-              int historyStartIndex = history_count - 10 -1;
-              printf("\nLast ten commands: \n"); 
-              for(int i = historyStartIndex; i < history_count-1; i++) //print last 10 elements in the histroy
+            }
+             else if (strcmp(args[0], "!") == 0) {
+              char* integer = args[1];
+               int loopIteration;
+               int elementIndex;
+               if (atoi(integer)>history_count){
+                   loopIteration =history_count;
+                   elementIndex = history_count;
+              }else{
+                    loopIteration = atoi(integer);
+                    elementIndex = atoi(integer);
+              }
+              int historyEndingIndex = history_count-1;
+       
+              printf("\nLast %d commands: \n",loopIteration); 
+              for(int i = historyEndingIndex; (i >= history_count-loopIteration); i--) //print at most last 10 elements in the histroy
               {
-               printf("%s\n",history[i]); 
+               printf("%d %s\n",elementIndex,history[i]); 
+               elementIndex--;
                 
+              }
+              }
+            else if (strcmp(args[0], "!!") == 0) {
+             
+              int elementIndex;
+              int loopIteration;
+              int historyEndingIndex = history_count-1;
+       
+              if(history_count > 10){
+                elementIndex = 10;
+                loopIteration =10 ;
+              }else{
+                elementIndex = history_count;
+                loopIteration =history_count;
+              }
+              printf("\nLast commands: \n"); 
+              for(int i = historyEndingIndex; (i >= history_count-loopIteration); i--) //print at most last 10 elements in the histroy
+              {
+               printf("%d %s\n",elementIndex,history[i]); 
+               elementIndex--;
+                
+              }
+              }
+              else if (strcmp(args[0], "history") == 0) {
+              int historyEndingIndex = history_count-1;
+              int index = history_count;
+              printf("\nLast commands: \n"); 
+              for(int i = historyEndingIndex; i>=0 ; i--) //print at most last 10 elements in the histroy
+              {
+               printf("%d %s\n",index,history[i]); 
+              index--;
               }
               
             }
