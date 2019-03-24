@@ -36,12 +36,13 @@ int main(void)
 	
   int i, upper;
   int first_time = 1;
-  int k;
+  int first_time_2 = 1;
 		
   while (shouldrun){            		/* Program terminates normally inside setup */
     background = 0;
     shouldRedirect = 0;
     shouldAppend = 0;
+    first_time_2 = 1;
 
     if (first_time != 1) {
       fclose(stdout);
@@ -53,13 +54,31 @@ int main(void)
 		
     shouldrun = parseCommand(inputBuffer,args,&background,&shouldRedirect,&shouldAppend);       /* get next command */
 
-    char **ptr = history;
-    ptr[history_count] = inputBuffer;
-    history_count++;
-
-    for (k=0; k<history_count; k++) {
-      printf("%s\n", ptr[k]);
+    char **ptr = args;
+    char current_command[MAX_LINE];
+    strcpy(current_command, "");
+    while (*ptr != NULL) {
+      if (first_time_2 != 1) {
+        strcat(current_command, " ");
+        strcat(current_command, *ptr);
+      }
+      else {
+        strcpy(current_command, *ptr);
+        first_time_2 = 0;
+      }
+      *ptr++;
     }
+    if (background == 1) {
+      strcat(current_command, " &");
+    }
+    printf("%s\n", current_command);
+
+    // history[history_count] = current_command;
+
+    // char **sss = history;
+    // while (*sss != NULL) {
+      
+    // }
 
     if (strncmp(inputBuffer, "exit", 4) == 0)
       shouldrun = 0;     /* Exiting from shelldon*/
