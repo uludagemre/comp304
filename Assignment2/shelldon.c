@@ -31,7 +31,7 @@ int main(void)
   int shouldRedirect;
   int shouldAppend;
   FILE *mystdout = stdout;
-  char* history[1000];
+  char history[100][20];
   int history_count = 0;
 	
   int i, upper;
@@ -53,13 +53,10 @@ int main(void)
 		
     shouldrun = parseCommand(inputBuffer,args,&background,&shouldRedirect,&shouldAppend);       /* get next command */
 
-    char **ptr = history;
-    ptr[history_count] = inputBuffer;
+    strcpy(history[history_count],inputBuffer);
     history_count++;
 
-    for (k=0; k<history_count; k++) {
-      printf("%s\n", ptr[k]);
-    }
+    
 
     if (strncmp(inputBuffer, "exit", 4) == 0)
       shouldrun = 0;     /* Exiting from shelldon*/
@@ -104,6 +101,15 @@ int main(void)
             }
             else if (strcmp(args[0], "cd") == 0) {
               exit(0);
+            }else if (strcmp(args[0], "!!") == 0) {
+              int historyStartIndex = history_count - 10 -1;
+              printf("\nLast ten commands: \n"); 
+              for(int i = historyStartIndex; i < history_count-1; i++) //print last 10 elements in the histroy
+              {
+               printf("%s\n",history[i]); 
+                
+              }
+              
             }
             else {
               strcpy(path, "/bin/");
