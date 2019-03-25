@@ -155,10 +155,10 @@ int main(void)
             int targetHistory = atoi(subbuff);
             strcpy(historyCommand, history[targetHistory - 1]);
             isInHistory = 1;
-            int lengthOfHistory = strlen(historyCommand);
-            historyCommand[lengthOfHistory + 1] = '\n';
+            // int lengthOfHistory = strlen(historyCommand);
+            // historyCommand[lengthOfHistory + 1] = '\n';
             strcat(historyCommand, "\n\0");
-            char path[10];
+            char path[20];
             shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand);
             if (strcmp(args[0], "history") == 0)
             {
@@ -172,27 +172,64 @@ int main(void)
               int historyEndingIndex = history_count - 1;
               int index = history_count;
               printf("\nLast commands: \n");
-              for (int i = historyEndingIndex; i >= 0; i--) //print at most last 10 elements in the histroy
+              for (int i = historyEndingIndex; (i > historyEndingIndex-10) & (i >= 0); i--) //print at most last 10 elements in the histroy
               {
                 printf("%d %s\n", index, history[i]);
                 index--;
               }
-            }else{
-            strcpy(path, "/bin/");
-            strcat(path, args[0]);
-            printf("this is path %s", path);
-            execv(path, args);
             }
-            
+            else if (strcmp(args[0], "cd") == 0)
+            {
+              chdir(args[1]);
+            }
+            else
+            {
+              strcpy(path, "/bin/");
+              strcat(path, args[0]);
+              printf("this is path %s", path);
+              execv(path, args);
+            }
           }
           else
           {
-            int targetHistory = history_count - 1;
-            strcpy(historyCommand, history[targetHistory - 1]);
+            strcpy(historyCommand, history[history_count-1]);
             isInHistory = 1;
-            continue;
+            strcat(historyCommand, "\n\0");
+            char path[20];
+            shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand);
+            if (strcmp(args[0], "history") == 0)
+            {
+
+              if (history_count == 1)
+              {
+                printf("No history data found \n");
+                break;
+              }
+
+              int historyEndingIndex = history_count - 1;
+              int index = history_count;
+              printf("\nLast commands: \n");
+              for (int i = historyEndingIndex; (i > historyEndingIndex-10) & (i >= 0); i--) //print at most last 10 elements in the histroy
+              {
+                printf("%d %s\n", index, history[i]);
+                index--;
+              }
+            }
+            else if (strcmp(args[0], "cd") == 0)
+            {
+              chdir(args[1]);
+            }
+            else
+            {
+              strcpy(path, "/bin/");
+              strcat(path, args[0]);
+              printf("this is path %s", path);
+              execv(path, args);
+            
+            }
           }
         }
+        
         else if (strcmp(args[0], "history") == 0)
         {
 
@@ -205,7 +242,7 @@ int main(void)
           int historyEndingIndex = history_count - 1;
           int index = history_count;
           printf("\nLast commands: \n");
-          for (int i = historyEndingIndex; i >= 0; i--) //print at most last 10 elements in the histroy
+          for (int i = historyEndingIndex; (i > historyEndingIndex-10) & (i >= 0); i--) //print at most last 10 elements in the histroy
           {
             printf("%d %s\n", index, history[i]);
             index--;
