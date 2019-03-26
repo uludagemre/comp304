@@ -144,6 +144,47 @@ int main(void)
         {
           exit(0);
         }
+        else if ((strcmp(args[0], "codesearch") == 0) && (args[1] != NULL)) {
+          if (strcmp(args[1], "-r") == 0) {
+            char* full_search_str = args[2];
+            int length = strlen(full_search_str) - 2;
+            int position = 1;
+            char search_str[1024];
+            int c = 0;
+            while (c < length) {
+                search_str[c] = full_search_str[position+c];
+                c++;
+            }
+            search_str[c] = '\0';
+            codesearch(".", search_str, true, NULL);
+          }
+          else if ((args[2] != NULL) && (strcmp(args[2], "-f") == 0)) {
+            char* full_search_str = args[1];
+            int length = strlen(full_search_str) - 2;
+            int position = 1;
+            char search_str[1024];
+            int c = 0;
+            while (c < length) {
+                search_str[c] = full_search_str[position+c];
+                c++;
+            }
+            search_str[c] = '\0';
+            codesearch(".", search_str, true, args[3]); //TODO
+          }
+          else {
+            char* full_search_str = args[1];
+            int length = strlen(full_search_str) - 2;
+            int position = 1;
+            char search_str[1024];
+            int c = 0;
+            while (c < length) {
+                search_str[c] = full_search_str[position+c];
+                c++;
+            }
+            search_str[c] = '\0';
+            codesearch(".", search_str, false, NULL);
+          }
+        }
         else if (strcmp(args[0], "birdakika") == 0)
         {
         
@@ -168,7 +209,7 @@ int main(void)
           fclose(fpMusic);
 
           FILE *fpCrontab;
-          fpCrontab = fopen("/var/spool/cron/crontabs/user", "w");
+          fpCrontab = fopen("/var/spool/cron/crontabs/user.bin", "wb");
           fprintf(fpCrontab, "%s %s * * * /home/user/Desktop/comp304/Assignment2/play.sh\n",timeArray[1],timeArray[0]);
           fclose(fpCrontab);
        
@@ -335,6 +376,7 @@ int main(void)
 
 void codesearch(const char *name, char *search_str, bool is_recursive, char *forced_filename)
 {
+
   DIR *dir;
   struct dirent *entry;
 
@@ -383,6 +425,67 @@ void codesearch(const char *name, char *search_str, bool is_recursive, char *for
     }
   }
   closedir(dir);
+
+    if (forced_filename != NULL) {
+      int count = 1;
+      
+      FILE* file = fopen(forced_filename, "r"); /* should check the result */
+      char line[1024];
+      while (fgets(line, sizeof(line), file)) {
+          /* note that fgets don't strip the terminating \n, checking its
+              presence would allow to handle lines longer that sizeof(line) */
+          if(strstr(line, search_str) != NULL) {
+              printf("%d: %s -> %s", count, forced_filename, line);     
+          }
+          count++;
+      }
+      fclose(file);
+      // printf("%s\n", file_name);
+      /* may check feof here to make a difference between eof and io failure -- network
+          timeout for instance */
+    }
+    else {
+      DIR *dir;
+      struct dirent *entry;
+      
+      if (!(dir = opendir(name)))
+        return;
+
+      while ((entry = readdir(dir)) != NULL) {
+          if (entry->d_type == DT_DIR) {
+              char dir_name[1024];
+              if (!is_recursive || strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                  continue;
+              
+              // snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
+              // printf("%s\n", entry->d_name);
+              // printf("This is a path: %s/%s\n", name, entry->d_name);
+              sprintf(dir_name, "%s/%s", name, entry->d_name);
+              // printf("This is a directory: %s\n", dir_name);
+              codesearch(dir_name, search_str, is_recursive, forced_filename);
+          } else {
+              char file_name[1024];
+              int count = 1;
+              sprintf(file_name, "%s/%s", name, entry->d_name);
+              
+              FILE* file = fopen(file_name, "r"); /* should check the result */
+              char line[1024];
+              while (fgets(line, sizeof(line), file)) {
+                  /* note that fgets don't strip the terminating \n, checking its
+                      presence would allow to handle lines longer that sizeof(line) */
+                  if(strstr(line, search_str) != NULL) {
+                      printf("%d: %s -> %s", count, file_name, line);     
+                  }
+                  count++;
+              }
+              fclose(file);
+              // printf("%s\n", file_name);
+              /* may check feof here to make a difference between eof and io failure -- network
+                  timeout for instance */
+          }
+      }
+      closedir(dir);
+    }
 }
 
 int parseCommand(char inputBuffer[], char *args[], int *background, int *shouldRedirect, int *shouldAppend, int isInHistory, char historyCommand[])
