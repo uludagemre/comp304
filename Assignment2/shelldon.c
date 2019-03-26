@@ -14,6 +14,8 @@ KUSIS ID: 31760 PARTNER NAME: Arda Arslan
 #include <string.h>
 #include <time.h>
 #include <wait.h>
+#include <dirent.h>
+#include <signal.h>
 
 
 #define MAX_LINE       80 /* 80 chars per line, per command, should be enough. */
@@ -25,6 +27,7 @@ int main(void)
   char inputBuffer[MAX_LINE]; 	        /* buffer to hold the command entered */
   int background;             	        /* equals 1 if a command is followed by '&' */
   char *args[MAX_LINE/2 + 1];	        /* command line (of 80) has max of 40 arguments */
+  int pid;
   pid_t child;            		/* process id of the child process */
   int status;           		/* result from execv system call*/
   int shouldrun = 1;
@@ -71,7 +74,7 @@ int main(void)
     if (background == 1) {
       strcat(current_command, " &");
     }
-    printf("%s\n", current_command);
+    // printf("%s\n", current_command);
 
     // history[history_count] = current_command;
 
@@ -86,8 +89,9 @@ int main(void)
     //Below is the answer of the first part
 
     if (shouldrun) {
-        child = fork();
-        if (child == 0) { // child
+        pid = fork();
+        if (pid == 0) { // child
+            child = getpid();
             char path[500];
             char filename[500];
             
@@ -123,6 +127,28 @@ int main(void)
             }
             else if (strcmp(args[0], "cd") == 0) {
               exit(0);
+            }
+            else if ((strcmp(args[0], "codesearch") == 0) && (args[1] != NULL)) {
+              if (strcmp(args[1], "-r") == 0) {
+                exit(0);
+              }
+              else if (strcmp(args[1], "-f") == 0) {
+                exit(0);
+              }
+              else {
+                DIR *d;
+                struct dirent *dir;
+                d = opendir(".");
+                if (d) {
+                  while ((dir = readdir(d)) != NULL) {
+                    char* filename = dir->d_name;
+                    if ((strcmp(filename, ".")!=0) && (strcmp(filename, "..")!=0)) {
+                      printf("%s\n", filename);
+                    }
+                  }
+                  closedir(d);
+                }
+              }
             }
             else {
               strcpy(path, "/bin/");
