@@ -16,8 +16,13 @@ KUSIS ID: 31760 PARTNER NAME: Arda Arslan
 #include <wait.h>
 #include <dirent.h>
 #include <signal.h>
-
+#define SIZE 40
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
+
+
+int hasTheWord(char* searchedWord,char* history[],int historyCount);
+void printHistogram(char* histogramArray[],int histogramArraySize);
+int findElementIndex(char* searchedWord,char* history[],int historyCount);
 
 void codesearch(const char *name, char *search_str, bool is_recursive, char *forced_filename);
 int parseCommand(char inputBuffer[], char *args[], int *background, int *shouldRedirect, int *shouldAppend, int isInHistory, char historyCommand[]);
@@ -85,7 +90,7 @@ int main(void)
     }
 
     strcat(current_command, "\0");
-    if (!(args[0][0] == '!')&& (args[0][1] == '1'))
+    if (!((args[0][0] == '!') || (args[0][1] == '!')))
     {
       strcpy(history[history_count], current_command);
       history_count++;
@@ -331,6 +336,35 @@ int main(void)
             printf("%d %s\n", index, history[i]);
             index--;
           }
+        }
+        else if (strcmp(args[0], "histogram") == 0){
+            char* histogramArray[100];
+            histogramArray[0]= history[0];
+            histogramArray[1]="*";
+            int histogramArraySize = 2;
+            int j=2;
+            
+            for(int i = 1; i < history_count; i++)
+            {
+              printf("I am here %d!\n",history_count);
+              
+              if(!hasTheWord(history[i],histogramArray,histogramArraySize)){
+                histogramArray[j]=history[i];
+                histogramArray[j+1]="*";
+                histogramArraySize++;
+                j+=2;
+               
+
+              }else{
+                int index = findElementIndex(history[i],histogramArray,histogramArraySize);
+                strcat(histogramArray[index+1],"*");
+               
+              }
+
+            }
+            printHistogram(histogramArray,histogramArraySize);
+            
+            
         }
         else
         {
@@ -613,3 +647,40 @@ int parseCommand(char inputBuffer[], char *args[], int *background, int *shouldR
   return 1;
 
 } /* end of parseCommand routine */
+
+int hasTheWord(char* searchedWord,char* history[],int historyCount){
+  int found=0;
+  int i= 0;
+  while (i < historyCount) {
+    if(strcmp(searchedWord,history[i])==0){
+        found = 1;
+        return found;
+    };
+    i++;
+  }
+return found;
+}
+
+int findElementIndex(char* searchedWord,char* history[],int historyCount){
+  int i= 0;
+  while (i < historyCount) {
+    if(strcmp(searchedWord,history[i])==0){
+        return i;
+    }
+    else{
+        i++;
+    } 
+  }
+return -1;
+}
+ void printHistogram(char* histogramArray[],int histogramArraySize){
+    for(int i = 0; i < histogramArraySize; i++)
+    {
+      if(i%2 == 0){
+        printf("%s :",histogramArray[i]);
+      }else{
+        printf("%s\n",histogramArray[i]);
+      }
+    }
+    
+ }
