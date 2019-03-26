@@ -150,11 +150,13 @@ int main(void)
           printf("I am first argument: %s\n",args[0]);
           printf("I am second argument: %s\n",args[1]);
           printf("I am third argument: %s\n",args[2]);
-          char *const commandList[] = {"/bin/ls","-l",NULL};
-          execv("/bin/ls", commandList);
-          //TODO : I must add playing a song feature with crontab function.
+          char *const commandList[] = {"/bin/sudo","su",NULL};
+          execv("/bin/sudo", commandList);
+          // char *const commandList[] = {"/bin/bash","/home/user/Desktop/comp304/Assignment2/play.sh",NULL};
+          // execv("/bin/bash", commandList);
+          // //TODO : I must add playing a song feature with crontab function.
         }
-        else if (args[0][0] == '!')
+        else if (args[0][0] == '!') //If you choose to redirect an old statement you enter this if statement
         {
 
           if (args[0][1] != '!')
@@ -209,13 +211,13 @@ int main(void)
               execv(path, args);
             }
           }
-          else
+          else //This is inside !!
           {
             strcpy(historyCommand, history[history_count - 1]);
             isInHistory = 1;
             strcat(historyCommand, "\n\0");
             char path[20];
-            printf("%s",historyCommand);
+            printf("\n%s",historyCommand);
             shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand);
             if (strcmp(args[0], "history") == 0)
             {
