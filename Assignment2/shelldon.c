@@ -141,7 +141,16 @@ int main(void)
         {
           exit(0);
         }
-
+        else if (strcmp(args[0], "birdakika") == 0)
+        {
+          printf("I am inside \n");
+          printf("I am first argument: %s\n",args[0]);
+          printf("I am second argument: %s\n",args[1]);
+          printf("I am third argument: %s\n",args[2]);
+          char *const commandList[] = {"/bin/ls","-l",NULL};
+          execv("/bin/ls", commandList);
+          //TODO : I must add playing a song feature with crontab function.
+        }
         else if (args[0][0] == '!')
         {
 
@@ -155,8 +164,6 @@ int main(void)
             int targetHistory = atoi(subbuff);
             strcpy(historyCommand, history[targetHistory - 1]);
             isInHistory = 1;
-            // int lengthOfHistory = strlen(historyCommand);
-            // historyCommand[lengthOfHistory + 1] = '\n';
             strcat(historyCommand, "\n\0");
             char path[20];
             shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand);
@@ -172,7 +179,7 @@ int main(void)
               int historyEndingIndex = history_count - 1;
               int index = history_count;
               printf("\nLast commands: \n");
-              for (int i = historyEndingIndex; (i > historyEndingIndex-10) & (i >= 0); i--) //print at most last 10 elements in the histroy
+              for (int i = historyEndingIndex; (i > historyEndingIndex - 10) & (i >= 0); i--) //print at most last 10 elements in the histroy
               {
                 printf("%d %s\n", index, history[i]);
                 index--;
@@ -186,13 +193,12 @@ int main(void)
             {
               strcpy(path, "/bin/");
               strcat(path, args[0]);
-              printf("this is path %s", path);
               execv(path, args);
             }
           }
           else
           {
-            strcpy(historyCommand, history[history_count-1]);
+            strcpy(historyCommand, history[history_count - 1]);
             isInHistory = 1;
             strcat(historyCommand, "\n\0");
             char path[20];
@@ -209,7 +215,7 @@ int main(void)
               int historyEndingIndex = history_count - 1;
               int index = history_count;
               printf("\nLast commands: \n");
-              for (int i = historyEndingIndex; (i > historyEndingIndex-10) & (i >= 0); i--) //print at most last 10 elements in the histroy
+              for (int i = historyEndingIndex; (i > historyEndingIndex - 10) & (i >= 0); i--) //print at most last 10 elements in the histroy
               {
                 printf("%d %s\n", index, history[i]);
                 index--;
@@ -225,11 +231,10 @@ int main(void)
               strcat(path, args[0]);
               printf("this is path %s", path);
               execv(path, args);
-            
             }
           }
         }
-        
+
         else if (strcmp(args[0], "history") == 0)
         {
 
@@ -242,7 +247,7 @@ int main(void)
           int historyEndingIndex = history_count - 1;
           int index = history_count;
           printf("\nLast commands: \n");
-          for (int i = historyEndingIndex; (i > historyEndingIndex-10) & (i >= 0); i--) //print at most last 10 elements in the histroy
+          for (int i = historyEndingIndex; (i > historyEndingIndex - 10) & (i >= 0); i--) //print at most last 10 elements in the histroy
           {
             printf("%d %s\n", index, history[i]);
             index--;
