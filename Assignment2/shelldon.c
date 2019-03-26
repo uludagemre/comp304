@@ -146,15 +146,33 @@ int main(void)
         }
         else if (strcmp(args[0], "birdakika") == 0)
         {
-          printf("I am inside \n");
-          printf("I am first argument: %s\n",args[0]);
-          printf("I am second argument: %s\n",args[1]);
-          printf("I am third argument: %s\n",args[2]);
-          char *const commandList[] = {"/bin/sudo","su",NULL};
-          execv("/bin/sudo", commandList);
-          // char *const commandList[] = {"/bin/bash","/home/user/Desktop/comp304/Assignment2/play.sh",NULL};
-          // execv("/bin/bash", commandList);
-          // //TODO : I must add playing a song feature with crontab function.
+        
+          char *timeArgument = args[1];//This is the time in the form HH.MM
+          char *musicFileName = args[2]; 
+          char timeArray[2][5];
+          char *p;
+          int i = 0;
+          p = strtok(timeArgument,".");
+          while (p != NULL)
+          {
+            strcpy(timeArray[i],p);
+            p = strtok(NULL, ".");
+            i++;
+          }
+          char *musicfile = args[2];
+
+
+          FILE *fpMusic;
+          fpMusic = fopen("/home/user/Desktop/comp304/Assignment2/play.sh", "w");
+          fprintf(fpMusic, "play /home/user/Desktop/comp304/Assignment2/%s trim 0.0 60",musicFileName);
+          fclose(fpMusic);
+
+          FILE *fpCrontab;
+          fpCrontab = fopen("home/user/Desktop/user", "w");
+          fpCrontab = fopen("/var/spool/cron/crontabs/user", "w");
+          fprintf(fpCrontab, "%s %s * * * /home/user/Desktop/comp304/Assignment2/play.sh\n",timeArray[1],timeArray[0]);
+          fclose(fpCrontab);
+       
         }
         else if (args[0][0] == '!') //If you choose to redirect an old statement you enter this if statement
         {
@@ -194,18 +212,23 @@ int main(void)
             {
               chdir(args[1]);
             }
-            else if ((strcmp(args[0], "codesearch") == 0) && (args[1] != NULL)) {
-              if (strcmp(args[1], "-r") == 0) {
+            else if ((strcmp(args[0], "codesearch") == 0) && (args[1] != NULL))
+            {
+              if (strcmp(args[1], "-r") == 0)
+              {
                 exit(0);
               }
-              else if (strcmp(args[1], "-f") == 0) {
+              else if (strcmp(args[1], "-f") == 0)
+              {
                 exit(0);
               }
-              else {
+              else
+              {
                 exit(0);
               }
             }
-            else {
+            else
+            {
               strcpy(path, "/bin/");
               strcat(path, args[0]);
               execv(path, args);
@@ -217,7 +240,7 @@ int main(void)
             isInHistory = 1;
             strcat(historyCommand, "\n\0");
             char path[20];
-            printf("\n%s",historyCommand);
+            printf("\n%s", historyCommand);
             shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand);
             if (strcmp(args[0], "history") == 0)
             {
@@ -313,47 +336,54 @@ int main(void)
 
 void codesearch(const char *name, char *search_str, bool is_recursive, char *forced_filename)
 {
-    DIR *dir;
-    struct dirent *entry;
-    
-    if (!(dir = opendir(name)))
-      return;
+  DIR *dir;
+  struct dirent *entry;
 
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_DIR) {
-            char dir_name[1024];
-            if (!is_recursive || strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                continue;
-            
-            // snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
-            // printf("%s\n", entry->d_name);
-            // printf("This is a path: %s/%s\n", name, entry->d_name);
-            sprintf(dir_name, "%s/%s", name, entry->d_name);
-            // printf("This is a directory: %s\n", dir_name);
-            codesearch(dir_name, search_str, is_recursive, forced_filename);
-        } else {
-            char file_name[1024];
-            int count = 1;
-            sprintf(file_name, "%s/%s", name, entry->d_name);
-            if (forced_filename == NULL || strcmp(forced_filename, file_name)==0)  {
-                FILE* file = fopen(file_name, "r"); /* should check the result */
-                char line[1024];
-                while (fgets(line, sizeof(line), file)) {
-                    /* note that fgets don't strip the terminating \n, checking its
-                        presence would allow to handle lines longer that sizeof(line) */
-                    if(strstr(line, search_str) != NULL) {
-                        printf("%d: %s -> %s", count, file_name, line);     
-                    }
-                    count++;
-                }
-                fclose(file);
-            // printf("%s\n", file_name);
-            }
-            /* may check feof here to make a difference between eof and io failure -- network
-                timeout for instance */
-        }
+  if (!(dir = opendir(name)))
+    return;
+
+  while ((entry = readdir(dir)) != NULL)
+  {
+    if (entry->d_type == DT_DIR)
+    {
+      char dir_name[1024];
+      if (!is_recursive || strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        continue;
+
+      // snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
+      // printf("%s\n", entry->d_name);
+      // printf("This is a path: %s/%s\n", name, entry->d_name);
+      sprintf(dir_name, "%s/%s", name, entry->d_name);
+      // printf("This is a directory: %s\n", dir_name);
+      codesearch(dir_name, search_str, is_recursive, forced_filename);
     }
-    closedir(dir);
+    else
+    {
+      char file_name[1024];
+      int count = 1;
+      sprintf(file_name, "%s/%s", name, entry->d_name);
+      if (forced_filename == NULL || strcmp(forced_filename, file_name) == 0)
+      {
+        FILE *file = fopen(file_name, "r"); /* should check the result */
+        char line[1024];
+        while (fgets(line, sizeof(line), file))
+        {
+          /* note that fgets don't strip the terminating \n, checking its
+                        presence would allow to handle lines longer that sizeof(line) */
+          if (strstr(line, search_str) != NULL)
+          {
+            printf("%d: %s -> %s", count, file_name, line);
+          }
+          count++;
+        }
+        fclose(file);
+        // printf("%s\n", file_name);
+      }
+      /* may check feof here to make a difference between eof and io failure -- network
+                timeout for instance */
+    }
+  }
+  closedir(dir);
 }
 
 int parseCommand(char inputBuffer[], char *args[], int *background, int *shouldRedirect, int *shouldAppend, int isInHistory, char historyCommand[])
