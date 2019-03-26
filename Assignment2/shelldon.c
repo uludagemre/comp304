@@ -85,7 +85,7 @@ int main(void)
     }
 
     strcat(current_command, "\0");
-    if (args[0][0] != '!')
+    if (!(args[0][0] == '!')&& (args[0][1] == '1'))
     {
       strcpy(history[history_count], current_command);
       history_count++;
@@ -168,7 +168,6 @@ int main(void)
           fclose(fpMusic);
 
           FILE *fpCrontab;
-          fpCrontab = fopen("home/user/Desktop/user", "w");
           fpCrontab = fopen("/var/spool/cron/crontabs/user", "w");
           fprintf(fpCrontab, "%s %s * * * /home/user/Desktop/comp304/Assignment2/play.sh\n",timeArray[1],timeArray[0]);
           fclose(fpCrontab);
