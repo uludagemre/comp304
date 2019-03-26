@@ -245,6 +245,7 @@ int main(void)
             isInHistory = 1;
             strcat(historyCommand, "\n\0");
             char path[20];
+            printf("%s",historyCommand);
             shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand);
             if (strcmp(args[0], "history") == 0)
             {
