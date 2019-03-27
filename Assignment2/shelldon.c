@@ -208,12 +208,13 @@ int main(void)
           fpMusic = fopen("/home/user/Desktop/comp304/Assignment2/play.sh", "w");
           fprintf(fpMusic, "play /home/user/Desktop/comp304/Assignment2/%s trim 0.0 60",musicFileName);
           fclose(fpMusic);
-
+     
           FILE *fpCrontab;
-          fpCrontab = fopen("/var/spool/cron/crontabs/user.bin", "wb");
+          fpCrontab = fopen("crontabFile", "w");
           fprintf(fpCrontab, "%s %s * * * /home/user/Desktop/comp304/Assignment2/play.sh\n",timeArray[1],timeArray[0]);
           fclose(fpCrontab);
-       
+          char* arguments[] = {"crontab","crontabFile",NULL};
+          execv("/usr/bin/crontab",arguments);
         }
         else if (args[0][0] == '!') //If you choose to redirect an old statement you enter this if statement
         {
@@ -228,7 +229,10 @@ int main(void)
             int targetHistory = atoi(subbuff);
             strcpy(historyCommand, history[targetHistory - 1]);
             isInHistory = 1;
-            strcat(historyCommand, "\n\0");
+            // strcat(historyCommand, "\n\0");
+            // strcpy(history[history_count], historyCommand);
+            // Above part is not communicating with the history variable in parent process so we need to use a shared memory section to make it happen.
+            history_count++;
             char path[20];
             shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand);
             if (strcmp(args[0], "history") == 0)
@@ -242,7 +246,7 @@ int main(void)
 
               int historyEndingIndex = history_count - 1;
               int index = history_count;
-              printf("\nLast commands: \n");
+              printf("Last commands: \n");
               for (int i = historyEndingIndex; (i > historyEndingIndex - 10) & (i >= 0); i--) //print at most last 10 elements in the histroy
               {
                 printf("%d %s\n", index, history[i]);
@@ -281,7 +285,7 @@ int main(void)
             isInHistory = 1;
             strcat(historyCommand, "\n\0");
             char path[20];
-            printf("\n%s", historyCommand);
+            
             shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand);
             if (strcmp(args[0], "history") == 0)
             {
@@ -294,7 +298,7 @@ int main(void)
 
               int historyEndingIndex = history_count - 1;
               int index = history_count;
-              printf("\nLast commands: \n");
+              printf("Last commands: \n");
               for (int i = historyEndingIndex; (i > historyEndingIndex - 10) & (i >= 0); i--) //print at most last 10 elements in the histroy
               {
                 printf("%d %s\n", index, history[i]);
@@ -326,7 +330,7 @@ int main(void)
 
           int historyEndingIndex = history_count - 1;
           int index = history_count;
-          printf("\nLast commands: \n");
+          printf("Last commands: \n");
           for (int i = historyEndingIndex; (i > historyEndingIndex - 10) & (i >= 0); i--) //print at most last 10 elements in the histroy
           {
             printf("%d %s\n", index, history[i]);
@@ -361,7 +365,7 @@ int main(void)
       }
       else
       { // parent
-        if (background == 1)
+        if (background == 0)
         {
           //This is the part when user puts '&' sign after the first command
           wait(NULL);
