@@ -229,7 +229,7 @@ int main(void)
             int targetHistory = atoi(subbuff);
             strcpy(historyCommand, history[targetHistory - 1]);
             isInHistory = 1;
-            // strcat(historyCommand, "\n\0");
+            strcat(historyCommand, "\n\0");
             // strcpy(history[history_count], historyCommand);
             // Above part is not communicating with the history variable in parent process so we need to use a shared memory section to make it happen.
             history_count++;
