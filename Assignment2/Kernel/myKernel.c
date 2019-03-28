@@ -8,7 +8,7 @@
 #include <linux/types.h>
  
 MODULE_LICENSE("KOC /GPL");
-MODULE_AUTHOR("Emre Uludag/Arda Arslan");
+MODULE_AUTHOR("Emre Uludag-Arda Arslan");
  
 static int processID = -1000;
 struct list_head *list;
