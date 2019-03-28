@@ -1,4 +1,4 @@
-obj-m	:= kernel.o
+obj-m	:= myKernel.o
  
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)

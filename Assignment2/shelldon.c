@@ -38,6 +38,8 @@ int main(void)
   int history_count = 0;
   char historyCommand[MAX_LINE];
   int isInHistory;
+  int processID=-1000;
+  int kernel=0;
 
   int i, upper;
   int first_time = 1;
@@ -317,6 +319,16 @@ int main(void)
               execv(path, args);
             }
           }
+        }
+        //This part is for fourth question:
+        else if (strcmp(args[0], "oldestchild") == 0){
+            if(args[1]==processID)
+          printf("This kernel is already loaded");
+
+             else{
+               //deletes previous kernel if new id is inserted
+            if(kernel>1)
+              system("sudo rmmod fileinfo304");
         }
 
         else if (strcmp(args[0], "history") == 0)
