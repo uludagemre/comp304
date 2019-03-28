@@ -323,18 +323,18 @@ int main(void)
         //This part is for fourth question:
         else if (strcmp(args[0], "oldestchild") == 0){
             char* removalArguments[] = {"rmmod","/Assigment2/myKernel",NULL};
-            char *processIDArgument = malloc(50);
-            processID = atoi(args[1]);
-            char *oldestChild = "/Assigment2/myKernel.ko";
+            char* processIDArgument = malloc(50);     
+            char* oldestChild = "/Assigment2/myKernel.ko";
             sprintf(processIDArgument,"processID=%s",args[1]);
             char* writeArguments[] = {"insmod",oldestChild,processIDArgument,NULL};
-            if(args[1]==processID)
+            if(atoi(args[1])==processID)
             printf("Kernel is loaded previously");
              else{
             if(kernel>1)
               execv("/sbin/rmmod",removalArguments);
              }
             execv("/sbin/insmod",writeArguments);
+            processID = atoi(args[1]);
             kernel++;
 
         }
