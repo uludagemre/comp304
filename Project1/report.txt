@@ -1,0 +1,6 @@
+Project-1 Report 
+Emre Uludağ/Arda Arslan
+Part 1)
+In the first part of the project we added our fork method just below the should run control
+Our main strategy is to use execv function by specifying special functions with string concatenation that are located mostly in /bin directory such as :
+
