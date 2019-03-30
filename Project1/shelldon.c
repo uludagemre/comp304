@@ -34,8 +34,8 @@ int main(void)
   int shouldRedirect;
   int shouldAppend;
   FILE *mystdout = stdout;
-  char history[100][50];
-  int history_count = 0;
+  char history[100][50]; //This is our history array initialization
+  int history_count = 0; //In the begining since there is no command inputted history count must always be zero
   char historyCommand[MAX_LINE];
   int isInHistory;
 
@@ -60,38 +60,38 @@ int main(void)
     }
     else
     {
-      first_time = 1;
+      first_time = 1; //this first time variable control if our current command is called from history or from shelldon command line 
     }
     stdout = mystdout;
 
     shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand); /* get next command */
 
-    char **ptr = args;
+    char **ptr = args; //We keep a pointer in order to write the elements of inputed arguments properly to the history
     char current_command[MAX_LINE];
     strcpy(current_command, "");
     while (*ptr != NULL)
     {
       if (first_time_2 != 1)
       {
-        strcat(current_command, " ");
+        strcat(current_command, " "); //We put spaces in between here
         strcat(current_command, *ptr);
       }
       else
       {
         strcpy(current_command, *ptr);
-        first_time_2 = 0;
+        first_time_2 = 0; 
       }
       *ptr++;
     }
     if (background == 1)
     {
-      strcat(current_command, " &");
+      strcat(current_command, " &"); //When the background condition is 1 we must put & sign at the end of our current command 
     }
 
-    strcat(current_command, "\0");
-    if (!((args[0][0] == '!') || (args[0][1] == '!')))
+    strcat(current_command, "\0"); 
+    if (!((args[0][0] == '!') || (args[0][1] == '!'))) 
     {
-      strcpy(history[history_count], current_command);
+      strcpy(history[history_count], current_command); //The part when added commands to our history array
       history_count++;
     }
 
@@ -108,14 +108,14 @@ int main(void)
 
     if (shouldrun)
     {
-      child = fork();
+      child = fork(); //This part is when we fork the processes and get child and parent processes as a result
       if (child == 0)
       { // child
         char path[500];
         char filename[500];
 
         int count = 0;
-
+		//For controlling the cases with > and >> we created two auxilary variables and use them below
         if ((shouldRedirect == 1) && (shouldAppend == 1))
         {
           while (true)
@@ -129,7 +129,7 @@ int main(void)
             count++;
           }
 
-          freopen(filename, "a+", stdout);
+          freopen(filename, "a+", stdout); //This part is for the append case 
         }
         if ((shouldRedirect == 1) && (shouldAppend == 0))
         {
@@ -143,7 +143,7 @@ int main(void)
             }
             count++;
           }
-          freopen(filename, "w+", stdout);
+          freopen(filename, "w+", stdout); //This part is for the write case 
         }
 
         if (strcmp(args[0], "gcc") == 0)
@@ -214,13 +214,13 @@ int main(void)
             codesearch(".", search_str, false, NULL);
           }
         }
-        else if (strcmp(args[0], "birdakika") == 0)
+        else if (strcmp(args[0], "birdakika") == 0) //this part is for birdakika function 
         {
           char cwd[1024];
           getcwd(cwd, sizeof(cwd));
           char *timeArgument = args[1];//This is the time in the form HH.MM
-          char *musicFileName = args[2]; 
-          char timeArray[2][5];
+          char *musicFileName = args[2]; //This is the name of the music file
+          char timeArray[2][5]; //The array we builded for outting time elements
           char *p;
           int i = 0;
           p = strtok(timeArgument,".");
@@ -233,12 +233,12 @@ int main(void)
           char *musicfile = args[2];
 
           FILE *fpMusic;
-          fpMusic = fopen("play.sh", "w");
+          fpMusic = fopen("play.sh", "w"); //We keep the command for playing the music inside of this executable file
           fprintf(fpMusic, "play %s/%s trim 0.0 60", cwd, musicFileName);
           fclose(fpMusic);
      
           FILE *fpCrontab;
-          fpCrontab = fopen("crontabFile", "w");
+          fpCrontab = fopen("crontabFile", "w"); //We pass the crontabFile to crontab function with execv command below
           fprintf(fpCrontab, "%s %s * * * %s/play.sh\n",timeArray[1],timeArray[0], cwd);
           fclose(fpCrontab);
           char* arguments[] = {"crontab","crontabFile",NULL};
@@ -257,7 +257,6 @@ int main(void)
             isInHistory = 1;
             strcat(historyCommand, "\n\0");
             // strcpy(history[history_count], historyCommand);
-            // Above part is not communicating with the history variable in parent process so we need to use a shared memory section to make it happen.
             history_count++;
             char path[20];
             shouldrun = parseCommand(inputBuffer, args, &background, &shouldRedirect, &shouldAppend, isInHistory, historyCommand);
@@ -417,15 +416,14 @@ int main(void)
             {
               strcpy(path, "/bin/");
               strcat(path, args[0]);
-              printf("this is path %s", path);
               execv(path, args);
             }
           }
         }
-        else if (strcmp(args[0], "history") == 0)
+        else if (strcmp(args[0], "history") == 0) // This is the part where we printed history elements
         {
 
-          if (history_count == 1)
+          if (history_count == 1) // If the user asks the history elements for the first time an input operation is made then No history data prompt will appear
           {
             printf("No history data found \n");
             break;
@@ -440,7 +438,7 @@ int main(void)
             index--;
           }
         }
-        else if (strcmp(args[0], "countUsages") == 0){          
+        else if (strcmp(args[0], "countUsages") == 0){ // In countUsages we counted the number of usages of the inputted command in the history array
             char* historyElement = args[1];
             int count = 0;
             for(size_t i = 0; i < history_count; i++)
@@ -523,7 +521,7 @@ int main(void)
           wait(NULL);
         }
 
-        if (strcmp(args[0], "cd") == 0)
+        if (strcmp(args[0], "cd") == 0) // The cd command must work in the parent process
         {
           chdir(args[1]);
         }
