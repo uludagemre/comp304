@@ -38,12 +38,13 @@ int main(void)
   int history_count = 0;
   char historyCommand[MAX_LINE];
   int isInHistory;
-  int processID=-1000;
-  int kernel=0;
 
   int i, upper;
   int first_time = 1;
   int first_time_2 = 1;
+  
+  _Bool module_loaded = 0;
+  int module_proc_id= 0;
 
   while (shouldrun)
   { /* Program terminates normally inside setup */
@@ -94,8 +95,14 @@ int main(void)
       history_count++;
     }
 
-    if (strncmp(inputBuffer, "exit", 4) == 0)
-      shouldrun = 0; /* Exiting from shelldon*/
+    if (strncmp(inputBuffer, "exit", 4) == 0) {
+      shouldrun = 0;     /* Exiting from shelldon*/
+      if(module_loaded){
+        char *args1[] ={"sudo","rmmod","myKernel",NULL};
+        execv("/usr/bin/sudo", args1);
+        printf("The module 'oldestchild' was removed successfully.");
+      }
+    }
 
     //Below is the answer of the first part
 
@@ -150,47 +157,64 @@ int main(void)
         else if ((strcmp(args[0], "codesearch") == 0) && (args[1] != NULL)) {
           if (strcmp(args[1], "-r") == 0) {
             char* full_search_str = args[2];
-            int length = strlen(full_search_str) - 2;
-            int position = 1;
             char search_str[1024];
-            int c = 0;
-            while (c < length) {
-                search_str[c] = full_search_str[position+c];
-                c++;
+            if ((full_search_str[0] == '\"') && (full_search_str[strlen(full_search_str)-1] == '\"')) {
+              int length = strlen(full_search_str) - 2;
+              int position = 1;
+              int c = 0;
+              while (c < length) {
+                  search_str[c] = full_search_str[position+c];
+                  c++;
+              }
+              search_str[c] = '\0';
             }
-            search_str[c] = '\0';
+            else{
+              strcpy(search_str, full_search_str);
+            }
+            
             codesearch(".", search_str, true, NULL);
           }
           else if ((args[2] != NULL) && (strcmp(args[2], "-f") == 0)) {
             char* full_search_str = args[1];
-            int length = strlen(full_search_str) - 2;
-            int position = 1;
             char search_str[1024];
-            int c = 0;
-            while (c < length) {
-                search_str[c] = full_search_str[position+c];
-                c++;
+            if ((full_search_str[0] == '\"') && (full_search_str[strlen(full_search_str)-1] == '\"')) {
+              int length = strlen(full_search_str) - 2;
+              int position = 1;
+              int c = 0;
+              while (c < length) {
+                  search_str[c] = full_search_str[position+c];
+                  c++;
+              }
+              search_str[c] = '\0';
             }
-            search_str[c] = '\0';
-            codesearch(".", search_str, true, args[3]); //TODO
+            else{
+              strcpy(search_str, full_search_str);
+            }
+            codesearch(".", search_str, false, args[3]); //TODO
           }
           else {
             char* full_search_str = args[1];
-            int length = strlen(full_search_str) - 2;
-            int position = 1;
             char search_str[1024];
-            int c = 0;
-            while (c < length) {
-                search_str[c] = full_search_str[position+c];
-                c++;
+            if ((full_search_str[0] == '\"') && (full_search_str[strlen(full_search_str)-1] == '\"')) {
+              int length = strlen(full_search_str) - 2;
+              int position = 1;
+              int c = 0;
+              while (c < length) {
+                  search_str[c] = full_search_str[position+c];
+                  c++;
+              }
+              search_str[c] = '\0';
             }
-            search_str[c] = '\0';
+            else{
+              strcpy(search_str, full_search_str);
+            }
             codesearch(".", search_str, false, NULL);
           }
         }
         else if (strcmp(args[0], "birdakika") == 0)
         {
-        
+          char cwd[1024];
+          getcwd(cwd, sizeof(cwd));
           char *timeArgument = args[1];//This is the time in the form HH.MM
           char *musicFileName = args[2]; 
           char timeArray[2][5];
@@ -205,25 +229,22 @@ int main(void)
           }
           char *musicfile = args[2];
 
-
           FILE *fpMusic;
-          fpMusic = fopen("/home/user/Desktop/comp304/Assignment2/play.sh", "w");
-          fprintf(fpMusic, "play /home/user/Desktop/comp304/Assignment2/%s trim 0.0 60",musicFileName);
+          fpMusic = fopen("play.sh", "w");
+          fprintf(fpMusic, "play %s/%s trim 0.0 60", cwd, musicFileName);
           fclose(fpMusic);
      
           FILE *fpCrontab;
           fpCrontab = fopen("crontabFile", "w");
-          fprintf(fpCrontab, "%s %s * * * /home/user/Desktop/comp304/Assignment2/play.sh\n",timeArray[1],timeArray[0]);
+          fprintf(fpCrontab, "%s %s * * * %s/play.sh\n",timeArray[1],timeArray[0], cwd);
           fclose(fpCrontab);
           char* arguments[] = {"crontab","crontabFile",NULL};
           execv("/usr/bin/crontab",arguments);
         }
         else if (args[0][0] == '!') //If you choose to redirect an old statement you enter this if statement
         {
-
           if (args[0][1] != '!')
           {
-
             int length = strlen(args[0]);
             char subbuff[5];
             memcpy(subbuff, &args[0][1], length);
@@ -259,20 +280,98 @@ int main(void)
             {
               chdir(args[1]);
             }
-            else if ((strcmp(args[0], "codesearch") == 0) && (args[1] != NULL))
+            else if (strcmp(args[0], "birdakika") == 0)
             {
-              if (strcmp(args[1], "-r") == 0)
+              char cwd[1024];
+              getcwd(cwd, sizeof(cwd));
+              char *timeArgument = args[1];//This is the time in the form HH.MM
+              char *musicFileName = args[2]; 
+              char timeArray[2][5];
+              char *p;
+              int i = 0;
+              p = strtok(timeArgument,".");
+              while (p != NULL)
               {
-                exit(0);
+                strcpy(timeArray[i],p);
+                p = strtok(NULL, ".");
+                i++;
               }
-              else if (strcmp(args[1], "-f") == 0)
-              {
-                exit(0);
+              char *musicfile = args[2];
+
+              FILE *fpMusic;
+              fpMusic = fopen("play.sh", "w");
+              fprintf(fpMusic, "play %s/%s trim 0.0 60", cwd, musicFileName);
+              fclose(fpMusic);
+        
+              FILE *fpCrontab;
+              fpCrontab = fopen("crontabFile", "w");
+              fprintf(fpCrontab, "%s %s * * * %s/play.sh\n",timeArray[1],timeArray[0], cwd);
+              fclose(fpCrontab);
+              char* arguments[] = {"crontab","crontabFile",NULL};
+              execv("/usr/bin/crontab",arguments);
+            }
+            else if ((strcmp(args[0], "codesearch") == 0) && (args[1] != NULL)) {
+              if (strcmp(args[1], "-r") == 0) {
+                char* full_search_str = args[2];
+                char search_str[1024];
+                if ((full_search_str[0] == '\"') && (full_search_str[strlen(full_search_str)-1] == '\"')) {
+                  int length = strlen(full_search_str) - 2;
+                  int position = 1;
+                  int c = 0;
+                  while (c < length) {
+                      search_str[c] = full_search_str[position+c];
+                      c++;
+                  }
+                  search_str[c] = '\0';
+                }
+                else{
+                  strcpy(search_str, full_search_str);
+                }
+                
+                codesearch(".", search_str, true, NULL);
               }
-              else
-              {
-                exit(0);
+              else if ((args[2] != NULL) && (strcmp(args[2], "-f") == 0)) {
+                char* full_search_str = args[1];
+                char search_str[1024];
+                if ((full_search_str[0] == '\"') && (full_search_str[strlen(full_search_str)-1] == '\"')) {
+                  int length = strlen(full_search_str) - 2;
+                  int position = 1;
+                  int c = 0;
+                  while (c < length) {
+                      search_str[c] = full_search_str[position+c];
+                      c++;
+                  }
+                  search_str[c] = '\0';
+                }
+                else{
+                  strcpy(search_str, full_search_str);
+                }
+                codesearch(".", search_str, false, args[3]); //TODO
               }
+              else {
+                char* full_search_str = args[1];
+                char search_str[1024];
+                if ((full_search_str[0] == '\"') && (full_search_str[strlen(full_search_str)-1] == '\"')) {
+                  int length = strlen(full_search_str) - 2;
+                  int position = 1;
+                  int c = 0;
+                  while (c < length) {
+                      search_str[c] = full_search_str[position+c];
+                      c++;
+                  }
+                  search_str[c] = '\0';
+                }
+                else{
+                  strcpy(search_str, full_search_str);
+                }
+                codesearch(".", search_str, false, NULL);
+              }
+            }
+            else if (strcmp(args[0], "gcc") == 0)
+            {
+              strcpy(path, "/usr/bin/");
+              strcat(path, args[0]);
+              execv(path, args);
             }
             else
             {
@@ -320,25 +419,6 @@ int main(void)
             }
           }
         }
-        //This part is for fourth question:
-        else if (strcmp(args[0], "oldestchild") == 0){
-            char* removalArguments[] = {"rmmod","/Assigment2/myKernel",NULL};
-            char* processIDArgument = malloc(50);     
-            char* oldestChild = "/Assigment2/myKernel.ko";
-            sprintf(processIDArgument,"processID=%s",args[1]);
-            char* writeArguments[] = {"insmod",oldestChild,processIDArgument,NULL};
-            if(atoi(args[1])==processID)
-            printf("Kernel is loaded previously");
-             else{
-            if(kernel>1)
-              execv("/sbin/rmmod",removalArguments);
-             }
-            execv("/sbin/insmod",writeArguments);
-            processID = atoi(args[1]);
-            kernel++;
-
-        }
-        //This part is for fourth question:
         else if (strcmp(args[0], "history") == 0)
         {
 
@@ -357,8 +437,7 @@ int main(void)
             index--;
           }
         }
-        else if (strcmp(args[0], "countUsages") == 0){
-          
+        else if (strcmp(args[0], "countUsages") == 0){          
             char* historyElement = args[1];
             int count = 0;
             for(size_t i = 0; i < history_count; i++)
@@ -369,9 +448,40 @@ int main(void)
 
             }
             printf("Usage of %s is %d times\n",args[1],count);
-            
-
-
+        }
+        
+        else if(strcmp(args[0], "oldestchild") == 0){
+          int proc_id = atoi(args[1]);
+          if(module_proc_id == proc_id){
+            printf("Module is already loaded.\n");
+          }else{
+            if(module_loaded){
+              // Remove module
+              printf("Removing oldestchild module\n");
+              child = fork();
+              if(child == 0){
+                char *args1[] ={"sudo","rmmod","oldestchild",NULL};
+                execv("/usr/bin/sudo",args1);
+                return 0;
+              }else{
+                wait(NULL);
+              }
+            }
+            // load module
+            printf("Loading oldestchild module\n");
+            child = fork();
+            if(child == 0){
+              char p_arg[25] = "processID=";
+              strcat(p_arg,args[1]);
+              char *args1[] ={"sudo","insmod","./Kernel/myKernel.ko",p_arg,NULL};
+              execv("/usr/bin/sudo",args1);
+              return 0;
+            }else{
+              wait(NULL);
+            }
+            module_loaded = 1;
+            module_proc_id = proc_id;
+          }
         }
         else
         {
@@ -417,73 +527,18 @@ int main(void)
 
 void codesearch(const char *name, char *search_str, bool is_recursive, char *forced_filename)
 {
-
-  DIR *dir;
-  struct dirent *entry;
-
-  if (!(dir = opendir(name)))
-    return;
-
-  while ((entry = readdir(dir)) != NULL)
-  {
-    if (entry->d_type == DT_DIR)
-    {
-      char dir_name[1024];
-      if (!is_recursive || strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-        continue;
-
-      // snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
-      // printf("%s\n", entry->d_name);
-      // printf("This is a path: %s/%s\n", name, entry->d_name);
-      sprintf(dir_name, "%s/%s", name, entry->d_name);
-      // printf("This is a directory: %s\n", dir_name);
-      codesearch(dir_name, search_str, is_recursive, forced_filename);
-    }
-    else
-    {
-      char file_name[1024];
-      int count = 1;
-      sprintf(file_name, "%s/%s", name, entry->d_name);
-      if (forced_filename == NULL || strcmp(forced_filename, file_name) == 0)
-      {
-        FILE *file = fopen(file_name, "r"); /* should check the result */
-        char line[1024];
-        while (fgets(line, sizeof(line), file))
-        {
-          /* note that fgets don't strip the terminating \n, checking its
-                        presence would allow to handle lines longer that sizeof(line) */
-          if (strstr(line, search_str) != NULL)
-          {
-            printf("%d: %s -> %s", count, file_name, line);
-          }
-          count++;
-        }
-        fclose(file);
-        // printf("%s\n", file_name);
-      }
-      /* may check feof here to make a difference between eof and io failure -- network
-                timeout for instance */
-    }
-  }
-  closedir(dir);
-
     if (forced_filename != NULL) {
       int count = 1;
       
-      FILE* file = fopen(forced_filename, "r"); /* should check the result */
+      FILE* file = fopen(forced_filename, "r");
       char line[1024];
       while (fgets(line, sizeof(line), file)) {
-          /* note that fgets don't strip the terminating \n, checking its
-              presence would allow to handle lines longer that sizeof(line) */
           if(strstr(line, search_str) != NULL) {
               printf("%d: %s -> %s", count, forced_filename, line);     
           }
           count++;
       }
       fclose(file);
-      // printf("%s\n", file_name);
-      /* may check feof here to make a difference between eof and io failure -- network
-          timeout for instance */
     }
     else {
       DIR *dir;
@@ -509,20 +564,15 @@ void codesearch(const char *name, char *search_str, bool is_recursive, char *for
               int count = 1;
               sprintf(file_name, "%s/%s", name, entry->d_name);
               
-              FILE* file = fopen(file_name, "r"); /* should check the result */
+              FILE* file = fopen(file_name, "r");
               char line[1024];
               while (fgets(line, sizeof(line), file)) {
-                  /* note that fgets don't strip the terminating \n, checking its
-                      presence would allow to handle lines longer that sizeof(line) */
                   if(strstr(line, search_str) != NULL) {
                       printf("%d: %s -> %s", count, file_name, line);     
                   }
                   count++;
               }
               fclose(file);
-              // printf("%s\n", file_name);
-              /* may check feof here to make a difference between eof and io failure -- network
-                  timeout for instance */
           }
       }
       closedir(dir);
