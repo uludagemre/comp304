@@ -1,78 +1,57 @@
 #include <linux/module.h>
 #include <linux/moduleparam.h>
+#include <linux/sched.h>
+#include <linux/kernel.h>
 #include <linux/init.h>
-#include <linux/kernel.h>   
-#include <linux/sched.h>   
 #include <linux/pid.h>
 
+MODULE_AUTHOR("Emre Uludag - Arda Arslan");
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Arda Oztaskin & Melike Kavcioglu");
-MODULE_DESCRIPTION("Oldestchild module for Comp304 Project1");
 
-int processID = 0;
+int processID;
 
-module_param(processID,int,0);
+module_param(processID, int, 0);
 
-static void print_oldest(struct task_struct *base_task);
+static void execute_module(struct task_struct *base_task){
+	struct list_head *head;
+	struct task_struct *child_task;
+	int pid_of_oldest_child = 10000000;
+	char name_of_oldest_child[100] = "no_child";
 
-static int simple_init(void)
-{
-	// Errors should return 0/-E but it is not required by the assignment
-	printk(KERN_INFO "Loading Module...\n");
-	if(processID == 0){
-		printk(KERN_CRIT "No processID was given to the module oldestchild\n");
-		return 0;
-	}
-	printk(KERN_INFO "ProcessId: %d\n",processID);
-
-	struct pid *given_pid;
-	struct task_struct *base;
-	given_pid = find_vpid(processID);
-	if(given_pid == NULL){
-		printk(KERN_CRIT "Invalid processID!\n");
-		return 0;
-	}
-	base = pid_task(given_pid, PIDTYPE_PID);
-	if(base == NULL){
-		printk(KERN_CRIT "Invalid processID!\n");
-		return 0;
-	}
-	print_oldest(base);
-	return 0;
-}
-
-static void simple_cleanup(void)
-{
-	printk(KERN_INFO "Removing Module...\n");
-}
-static void print_oldest(struct task_struct *base_task){
-	struct task_struct *task;
-	struct list_head *list;
-	int oldest_pid= 99999; // supposed to be random big number. Do not forget to change
-	// in the if clause below
-	
-	char *oldest_name = "test";
-
-	list_for_each(list, &base_task->children){
-		task= list_entry(list, struct task_struct, sibling);
-		// Task now points to one of the current's children
-		//printk(KERN_INFO "PID: %d, Executable name: %s\n",task->pid,task->comm);
-		print_oldest(task);
-		if(task->pid < oldest_pid){
-			oldest_pid = task->pid;
-			oldest_name = task->comm;
+	list_for_each(head, &base_task->children) {
+		child_task = list_entry(head, struct task_struct, sibling);
+		execute_module(child_task);
+		if (pid_of_oldest_child > child_task->pid) {
+			pid_of_oldest_child = child_task->pid;
+			strcpy(name_of_oldest_child, child_task->comm);
 		}
-
 	}
-	// If it has a child
-	if(oldest_pid != 99999)
-	printk(KERN_INFO "Oldest child of parent with PID %d: PID: %d,Executable name: %s\n",base_task->pid,oldest_pid,oldest_name);
-	// Currently we are using the lowest PID to determine oldest child
-	// Using time arithmetic would be a better approach due to PID recycling. Try it later
-	
+	if (pid_of_oldest_child < 10000000) {
+		printk("PID of process: %d, PID of oldest child of this process: %d, Name of oldest child of this process: %s\n", base_task->pid, pid_of_oldest_child, name_of_oldest_child);
+	}
 }
 
+static int load_module(void)
+{
+	printk("Oldestchild module is now being loaded.\n");
+	if (processID == 0) {
+		printk("Oldestchild module was called without providing a processID.\n");
+		return 0;
+	}
+	else if ((find_vpid(processID) == NULL) || (pid_task(find_vpid(processID), PIDTYPE_PID) == NULL)) { 
+		printk("Provided processID is not valid.\n");
+		return 0;
+	}
+	else {
+		execute_module(pid_task(find_vpid(processID), PIDTYPE_PID));
+		return 0;
+	}
+}
 
-module_init(simple_init);
-module_exit(simple_cleanup);
+static void remove_module(void)
+{
+	printk("Oldestchild module is now being removed.\n");
+}
 
+module_init(load_module);
+module_exit(remove_module);

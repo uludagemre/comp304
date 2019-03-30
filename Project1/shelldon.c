@@ -43,8 +43,8 @@ int main(void)
   int first_time = 1;
   int first_time_2 = 1;
   
-  _Bool module_loaded = 0;
-  int module_proc_id= 0;
+  char last_pid[10];
+  int load_status = 0;
 
   while (shouldrun)
   { /* Program terminates normally inside setup */
@@ -97,10 +97,10 @@ int main(void)
 
     if (strncmp(inputBuffer, "exit", 4) == 0) {
       shouldrun = 0;     /* Exiting from shelldon*/
-      if(module_loaded){
-        char *args1[] ={"sudo","rmmod","myKernel",NULL};
-        execv("/usr/bin/sudo", args1);
+      if (load_status) {
         printf("The module 'oldestchild' was removed successfully.");
+        char *rm_args[] ={"sudo", "rmmod", "myKernel", NULL};
+        execv("/usr/bin/sudo", rm_args);
       }
     }
 
@@ -149,6 +149,9 @@ int main(void)
         if (strcmp(args[0], "gcc") == 0)
         {
           strcpy(path, "/usr/bin/");
+          strcat(path, args[0]);
+          execv(path, args);
+          exit(0);
         }
         else if (strcmp(args[0], "cd") == 0)
         {
@@ -450,48 +453,67 @@ int main(void)
             printf("Usage of %s is %d times\n",args[1],count);
         }
         
-        else if(strcmp(args[0], "oldestchild") == 0){
-          int proc_id = atoi(args[1]);
-          if(module_proc_id == proc_id){
-            printf("Module is already loaded.\n");
-          }else{
-            if(module_loaded){
-              // Remove module
-              printf("Removing oldestchild module\n");
+        else if(strcmp(args[0], "oldestchild") == 0) {
+          char* current_pid = args[1];
+          if (load_status) {
+            printf("Oldestchild module has been already loaded.\n");
+            if(strcmp(last_pid, current_pid) == 0) {
+              printf("And oldestchild module had been loaded with the same pid(%s) provided now..\n", current_pid);
+            }
+            else {
+              printf("However oldestchild module had been loaded with the a different pid(%s) than the one(%s) provided now..\n", last_pid, current_pid);
+              printf("So removing existing oldestchild module...\n");
               child = fork();
               if(child == 0){
-                char *args1[] ={"sudo","rmmod","oldestchild",NULL};
-                execv("/usr/bin/sudo",args1);
+                char *rm_args[] = {"sudo", "rmmod", "myKernel", NULL};
+                execv("/usr/bin/sudo", rm_args);
                 return 0;
-              }else{
+              }
+              else {
                 wait(NULL);
               }
+              printf("Loading a new oldestchild module...\n");
+              child = fork();
+              if (child == 0){
+                char process_id_element[40] = "processID=";
+                strcat(process_id_element, current_pid);
+                char *ins_arguments[] = {"sudo", "insmod", "./Kernel/myKernel.ko", process_id_element, NULL};
+                execv("/usr/bin/sudo", ins_arguments);
+                return 0;
+              }
+              else {
+                wait(NULL);
+              }
+              strcpy(last_pid, current_pid);
             }
-            // load module
-            printf("Loading oldestchild module\n");
+          }
+          else {
+            printf("Loading a new oldestchild module...\n");
             child = fork();
-            if(child == 0){
-              char p_arg[25] = "processID=";
-              strcat(p_arg,args[1]);
-              char *args1[] ={"sudo","insmod","./Kernel/myKernel.ko",p_arg,NULL};
-              execv("/usr/bin/sudo",args1);
+            if (child == 0){
+              char process_id_element[40] = "processID=";
+              strcat(process_id_element, current_pid);
+              char *ins_arguments[] = {"sudo", "insmod", "./Kernel/myKernel.ko", process_id_element, NULL};
+              execv("/usr/bin/sudo", ins_arguments);
               return 0;
-            }else{
+            }
+            else {
               wait(NULL);
             }
-            module_loaded = 1;
-            module_proc_id = proc_id;
+            load_status = 1;
+            strcpy(last_pid, current_pid);
           }
         }
         else
         {
           strcpy(path, "/bin/");
+          strcat(path, args[0]);
+          execv(path, args);
+
+          exit(0);
         }
 
-        strcat(path, args[0]);
-        execv(path, args);
-
-        exit(0);
+        
       }
       else
       { // parent
