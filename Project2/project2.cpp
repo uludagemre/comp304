@@ -179,6 +179,9 @@ char get_other_direction_with_maximum_number_of_cars(char direction) {
         length_of_longest_queue = (*queue_W).size();
         direction_of_longest_queue = 'W';
     }
+    if ((length_of_longest_queue == 0) || (length_of_longest_queue == 0)) {
+        return 'X';
+    }
     return direction_of_longest_queue;
 }
 
@@ -191,19 +194,19 @@ char get_other_direction_with_a_car_waiting_for_more_than_20_seconds(char direct
     int length_of_longest_waiting = -1;
     char direction_of_queue_with_longest_waiting = 'X';
 
-    if ((direction != 'N') && ((*queue_N).size() > 0) && (((*queue_N).front()).waiting_time > length_of_longest_waiting)) {
+    if ((direction != 'N') && ((*queue_N).size() > 0) && ((*queue_N).front().waiting_time > length_of_longest_waiting)) {
         length_of_longest_waiting = ((*queue_N).front()).waiting_time;
         direction_of_queue_with_longest_waiting = 'N';
     }
-    if ((direction != 'E') && ((*queue_E).size() > 0) && (((*queue_E).front()).waiting_time > length_of_longest_waiting)) {
+    if ((direction != 'E') && ((*queue_E).size() > 0) && ((*queue_E).front().waiting_time > length_of_longest_waiting)) {
         length_of_longest_waiting = ((*queue_E).front()).waiting_time;
         direction_of_queue_with_longest_waiting = 'E';
     }
-    if ((direction != 'S') && ((*queue_S).size() > 0) && (((*queue_S).front()).waiting_time > length_of_longest_waiting)) {
+    if ((direction != 'S') && ((*queue_S).size() > 0) && ((*queue_S).front().waiting_time > length_of_longest_waiting)) {
         length_of_longest_waiting = ((*queue_S).front()).waiting_time;
         direction_of_queue_with_longest_waiting = 'S';
     }
-    if ((direction != 'W') && ((*queue_W).size() > 0) && (((*queue_W).front()).waiting_time > length_of_longest_waiting)) {
+    if ((direction != 'W') && ((*queue_W).size() > 0) && ((*queue_W).front().waiting_time > length_of_longest_waiting)) {
         length_of_longest_waiting = ((*queue_W).front()).waiting_time;
         direction_of_queue_with_longest_waiting = 'W';
     }
@@ -253,15 +256,18 @@ void *car_thread_fn(void *direction_star) {
 void *police_thread_fn(void *sth) {
     current_time_police = time(NULL);
     char direction = 'N';
+    char current_direction;
+    int removed_car;
     while (current_time_police < end_time) {
         pthread_mutex_lock(&access_a_queue_mutex);
-        int removed_car = 0;
+        
         if (get_other_direction_with_a_car_waiting_for_more_than_20_seconds(direction) != 'X') {
             direction = get_other_direction_with_a_car_waiting_for_more_than_20_seconds(direction);
             remove_first_car(direction);
             removed_car = 1;
         }
-        else if (is_there_5_or_more_cars_in_other_queues(direction) == true) {
+        else if ((get_other_direction_with_maximum_number_of_cars(direction) != 'X') &&
+                 (is_there_5_or_more_cars_in_other_queues(direction) == true)) {
             direction = get_other_direction_with_maximum_number_of_cars(direction);
             remove_first_car(direction);
             removed_car = 1;
@@ -270,13 +276,10 @@ void *police_thread_fn(void *sth) {
             remove_first_car(direction);
             removed_car = 1;
         }
-        else {
+        else if (get_other_direction_with_maximum_number_of_cars(direction) != 'X') {
             direction = get_other_direction_with_maximum_number_of_cars(direction);
-            queue <Car> * current_queue = get_queue(direction);
-            if ((*current_queue).size() > 0) {
-                remove_first_car(direction);
-                removed_car = 1;
-            }
+            remove_first_car(direction);
+            removed_car = 1;
         }
 
         update_waiting_times('N', removed_car);
@@ -334,13 +337,13 @@ int main(int argc, char *argv[]){
     long id_W = 3;
     pthread_create(&thread_W, &thread_attribute, car_thread_fn, (void *)id_W);
     
-    // pthread_create(&thread_police, &thread_attribute, police_thread_fn, NULL); // Causes segmentation fault. Should be debugged
+    pthread_create(&thread_police, &thread_attribute, police_thread_fn, NULL); // Causes segmentation fault. Should be debugged
     
     pthread_join(thread_N, NULL);
     pthread_join(thread_E, NULL);
     pthread_join(thread_S, NULL);
     pthread_join(thread_W, NULL);
-    // pthread_join(thread_police, NULL); // Causes segmentation fault. Should be debugged.
+    pthread_join(thread_police, NULL); // Causes segmentation fault. Should be debugged.
 
     printf("Number of cars in direction N at the end of the program: %i\n", car_queue_N.size());
     printf("Number of cars in direction E at the end of the program: %i\n", car_queue_E.size());
