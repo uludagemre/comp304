@@ -44,6 +44,9 @@ char id_direction_mapping[4] = {'N','E','S','W'};
 float prob;
 time_t specified_time;
 int num_cars = 0;
+int police_gone_lazy = 0;
+
+
 
 void *create_car_log(void) {
     ofstream car_log_file("car.log");
@@ -52,8 +55,10 @@ void *create_car_log(void) {
         cout << "Unable to open the file" << endl;
     }
     else
-    {
-        car_log_file << "Action\t\t\tCarID\t\tD\t\t\tArrival-Time\t\tCross-Time\t\t\tWait-Time\t\t\tN\t\t\tE\t\t\tS\t\t\tW" << endl;
+    {   
+        char titlebar[250];
+        sprintf(titlebar,"%-20s%-20s%-20s%-20s%-20s%-20s%-20s%-20s%-20s%-20s","Action","CarID","Direction","Arrival-Time","Cross-Time","Wait-Time","N","E","S","W");
+        car_log_file << titlebar << endl;
         car_log_file << "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
         car_log_file.close();
     }
@@ -74,20 +79,20 @@ void *create_car_log(void) {
 //         police_log_file.close();
 //     }
 // }
-// void *create_position_log(void)
-// {
-//     ofstream position_log_file("snapshot.log");
-//     if (!position_log_file.is_open())
-//     {
-//         cout << "Unable to open the file" << endl;
-//     }
-//     else
-//     {
-//         position_log_file << "Snapshots" << endl;
-//         position_log_file << "---------" << endl;
-//         position_log_file.close();
-//     }
-// }
+void *create_position_log(void)
+{
+    ofstream position_log_file("snapshot.log");
+    if (!position_log_file.is_open())
+    {
+        cout << "Unable to open the file" << endl;
+    }
+    else
+    {
+        position_log_file << "    Snapshots   " << endl;
+        position_log_file << "------------------\n" << endl;
+        position_log_file.close();
+    }
+}
 
 
 
@@ -97,12 +102,20 @@ void *create_car_log(void) {
 //     outfile.open("police.log", std::ios_base::app);
 //     outfile << stringToAppend << endl;
 // }
-// void *appendPositionLog(const char *stringToAppend)
-// {
-//     std::ofstream outfile;
-//     outfile.open("position.log", std::ios_base::app);
-//     outfile << stringToAppend << endl;
-// }
+void *appendPositionLog(int snapShot[])
+{
+    char currentTime[30];
+    time_t c_time =time(0);
+    strftime(currentTime, 20, "%H:%M:%S", localtime(&c_time));
+    char output[40];
+    sprintf(output,"At: %s\n------------------\n",currentTime);
+    std::ofstream outfile;
+    outfile.open("snapshot.log", std::ios_base::app);
+    char positions[40];
+    sprintf(positions,"\t%d\t\n\n%d\t\t%d\n\n\t%d\t\n",snapShot[0],snapShot[1],snapShot[2],snapShot[3]);
+    outfile << output << endl;
+    outfile << positions << endl;
+}
 
 int pthread_sleep (int seconds)
 {
@@ -157,7 +170,7 @@ void *appendCarLog(struct Car car_to_be_removed, char *type)
     
     char outputString[300];
     sprintf(outputString,
-            "%s\t\t\t%d\t\t\t%c\t\t\t%s\t\t\t%s\t\t\t%f\t\t\t%d\t\t\t%d\t\t\t%d\t\t\t%d",
+            "%-20s%-20d%-20c%-20s%-20s%-20.1f%-20d%-20d%-20d%-20d",
             type,
             car_to_be_removed.id,
             car_to_be_removed.incoming_direction,
@@ -361,6 +374,8 @@ void *police_thread_fn(void *sth) {
         pthread_mutex_lock(&access_a_queue_mutex);
         removed_car = 0;
         
+
+        
         if (get_other_direction_with_a_car_waiting_for_more_than_20_seconds(direction) != 'X') {
             direction = get_other_direction_with_a_car_waiting_for_more_than_20_seconds(direction);
             remove_first_car(direction);
@@ -394,15 +409,22 @@ void *police_thread_fn(void *sth) {
 
         current_time_police = time(0);
 
-        // if ((specified_time == current_police_time) || (specified_time + 1 == current_police_time) || (specified_time + 2 == current_police_time)) {
-        //     // Append to queue log.
-        // }
+        if ((specified_time == current_time_police) || (specified_time+1 == current_time_police) || (specified_time+2 == current_time_police)) { // || (specified_time + 1 == current_police_time) || (specified_time + 2 == current_police_time)) {
+            
+        int snapShot[] = {(*(get_queue('N'))).size(),
+            (*(get_queue('E'))).size(),
+            (*(get_queue('S'))).size(),
+            (*(get_queue('W'))).size()} ;
+            appendPositionLog(snapShot);
+
+        }
     }
     pthread_exit(0);
 }
 
 int main(int argc, char *argv[]){
     create_car_log();
+    create_position_log();
     time_t start_time = time(0);
     int i = 1;
     while (i < argc) {
