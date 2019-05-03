@@ -419,6 +419,7 @@ void *police_thread_fn(void *sth)
     int hook_counter = 0;
     time_t h_time;
     pthread_cond_t conditionvarForPolice;
+    int conditionVaribaleForPolice = 0;
     int blockTheWay = 0;
     while (current_time_police < end_time)
     {
@@ -450,8 +451,8 @@ void *police_thread_fn(void *sth)
             blockTheWay = 1;
             
         }
-
-        if(!lines_are_empty && police_playing_cell_phone > 1 ){
+        conditionVaribaleForPolice = !lines_are_empty && (police_playing_cell_phone > 1 );
+        if(conditionVaribaleForPolice){
            
             police_playing_cell_phone = 0;
             char honkTime[30];
