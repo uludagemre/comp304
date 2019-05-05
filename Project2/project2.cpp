@@ -421,11 +421,18 @@ void *police_thread_fn(void *sth)
     pthread_cond_t conditionvarForPolice;
     int conditionVaribaleForPolice = 0;
     int blockTheWay = 0;
+    int snapshot1=0;
+    int snapshot2=0;
+    int snapshot3=0;
     while (current_time_police < end_time)
     {
         pthread_mutex_lock(&access_a_queue_mutex);
         removed_car = 0;
-        if ((specified_time == current_time_police) || (specified_time + 1 == current_time_police) || (specified_time + 2 == current_time_police))
+        if(specified_time == current_time_police) snapshot1++;
+        if(specified_time + 1 == current_time_police) snapshot2++;
+        if(specified_time + 2== current_time_police) snapshot3++;
+
+        if (( (snapshot1 == 1 )&& (specified_time == current_time_police) )|| ( (snapshot2 == 1) && (specified_time+1 == current_time_police  ) ) || ( (snapshot3 == 1) && (specified_time+2 == current_time_police ) ))
         {
             int snapShot[] = {(*(get_queue('N'))).size(),
                               (*(get_queue('E'))).size(),
