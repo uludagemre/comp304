@@ -1,2 +1,2 @@
 gcc virtmem.c -o virtmem
-./virtmem BACKING_STORE.bin addresses.txt
+./virtmem BACKING_STORE.bin addresses.txt -p 0
