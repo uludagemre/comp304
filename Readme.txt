@@ -1,1 +1,1 @@
-this repo includes Assignment 1 question and solutions
+this repo includes Operating Systems class questions and solutions
