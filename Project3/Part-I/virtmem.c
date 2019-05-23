@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define TLB_SIZE 16
 #define PAGES 256
@@ -32,6 +33,70 @@ struct tlbentry
   unsigned char physical;
 };
 
+typedef struct pagequeue
+{
+  int *queueArray;
+  int size;
+  int numberOfFrames;
+  int head;
+  int tail;
+} PageQueue;
+
+PageQueue *initQueue(int numberOfFrames)
+{
+  PageQueue *queue = (PageQueue *)malloc(sizeof(PageQueue));
+  queue->size = 0;
+  queue->numberOfFrames = numberOfFrames;
+  queue->head = 0;
+  queue->tail = numberOfFrames - 1;
+  queue->queueArray = (int *)malloc(queue->numberOfFrames * sizeof(int));
+  return queue;
+}
+
+void enqueue(PageQueue *queue, int data)
+{
+  if (!(queue->numberOfFrames == queue->size))
+  {
+    queue->tail++;
+    queue->tail %= queue->numberOfFrames;
+    queue->queueArray[queue->tail] = data;
+    queue->size++;
+  }
+  else
+  {
+    return;
+  }
+}
+
+int dequeue(PageQueue *queue)
+{
+  if (!(queue->size == 0))
+  {
+    int element = queue->queueArray[queue->head];
+    queue->head++;
+    queue->head %= queue->numberOfFrames;
+    queue->size--;
+    return element;
+  }
+  else
+  {
+    return -1;
+  }
+}
+
+bool dataExists(PageQueue *queue, int data)
+{
+  if (!(queue->size == 0))
+  {
+    for (int i = queue->head; i < queue->head + queue->size; i++)
+    {
+      if (queue->queueArray[i] == data)
+        return true;
+    }
+  }
+  return false;
+}
+
 // TLB is kept track of as a circular array, with the oldest element being overwritten once the TLB is full.
 struct tlbentry tlb[TLB_SIZE];
 // number of inserts into TLB that have been completed. Use as tlbindex % TLB_SIZE for the index of the next TLB line to use.
@@ -41,6 +106,8 @@ int tlbindex = 0;
 int pagetable[PAGES];
 
 signed char main_memory[MEMORY_SIZE];
+
+PageQueue *queue;
 
 // Pointer to memory mapped backing file
 signed char *backing;
@@ -107,6 +174,8 @@ int main(int argc, const char *argv[])
     pagetable[i] = -1;
   }
 
+  queue = initQueue(FRAMES);
+
   // Character buffer for reading lines of input file.
   char buffer[BUFFER_SIZE];
 
@@ -147,24 +216,26 @@ int main(int argc, const char *argv[])
           free_page++;
           if (rp == 0)
           { // FIFO
-            save_pyhsical_page_for_fifo(physical_page);
+            enqueue(queue, physical_page);
           }
           else
-          {  // LRU
-            save_pyhsical_page_for_lru(physical_page);
+          { // LRU
+            // save_physical_page_for_lru(physical_page);
+            printf("asd");
           }
         }
         else
         {
           if (rp == 0)
           { // FIFO
-            physical_page = get_frame_using_fifo();
-            save_pyhsical_page_for_fifo(physical_page);
+            physical_page = dequeue(queue);
+            enqueue(queue, physical_page);
           }
           else
           { // LRU
-            physical_page = get_frame_using_lru();
-            save_pyhsical_page_for_lru(physical_page);
+            // physical_page = get_physical_page_for_lru();
+            // save_physical_page_for_lru(physical_page);
+            printf("asd");
           }
         }
         // Copy page from backing file into physical memory
