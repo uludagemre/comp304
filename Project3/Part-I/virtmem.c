@@ -22,7 +22,7 @@
 #define OFFSET_BITS 8
 #define OFFSET_MASK 255
 
-#define MEMORY_SIZE PAGES *PAGE_SIZE
+#define MEMORY_SIZE FRAMES *PAGE_SIZE
 
 // Max number of characters per line of input file to read.
 #define BUFFER_SIZE 10
