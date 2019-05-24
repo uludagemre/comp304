@@ -85,19 +85,6 @@ int dequeue(PageQueue *queue)
   }
 }
 
-bool dataExists(PageQueue *queue, int data)
-{
-  if (!(queue->size == 0))
-  {
-    for (int i = queue->head; i < queue->head + queue->size; i++)
-    {
-      if (queue->queueArray[i] == data)
-        return true;
-    }
-  }
-  return false;
-}
-
 int recentUsages[FRAMES];
 
 int get_least_recently_used_element()
