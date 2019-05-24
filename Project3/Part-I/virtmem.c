@@ -22,7 +22,8 @@
 #define OFFSET_BITS 8
 #define OFFSET_MASK 255
 
-#define MEMORY_SIZE FRAMES *PAGE_SIZE
+#define LOGICAL_MEMORY_SIZE PAGES *PAGE_SIZE
+#define PHYSICAL_MEMORY_SIZE FRAMES *PAGE_SIZE
 
 // Max number of characters per line of input file to read.
 #define BUFFER_SIZE 10
@@ -97,6 +98,24 @@ bool dataExists(PageQueue *queue, int data)
   return false;
 }
 
+int recentUsages[FRAMES];
+
+int get_least_recently_used_element()
+{
+  int leastRecentUsedElementIndex = 0;
+  int leastRecent = 10000000;
+  int i;
+  for (i = 0; i < FRAMES; i++)
+  {
+    if (recentUsages[i] < leastRecent)
+    {
+      leastRecent = recentUsages[i];
+      leastRecentUsedElementIndex = i;
+    }
+  }
+  return leastRecentUsedElementIndex;
+}
+
 // TLB is kept track of as a circular array, with the oldest element being overwritten once the TLB is full.
 struct tlbentry tlb[TLB_SIZE];
 // number of inserts into TLB that have been completed. Use as tlbindex % TLB_SIZE for the index of the next TLB line to use.
@@ -105,7 +124,7 @@ int tlbindex = 0;
 // pagetable[logical_page] is the physical page number for logical page. Value is -1 if that logical page isn't yet in the table.
 int pagetable[PAGES];
 
-signed char main_memory[MEMORY_SIZE];
+signed char main_memory[PHYSICAL_MEMORY_SIZE];
 
 PageQueue *queue;
 
@@ -160,7 +179,7 @@ int main(int argc, const char *argv[])
 
   const char *backing_filename = argv[1];
   int backing_fd = open(backing_filename, O_RDONLY);
-  backing = mmap(0, MEMORY_SIZE, PROT_READ, MAP_PRIVATE, backing_fd, 0);
+  backing = mmap(0, LOGICAL_MEMORY_SIZE, PROT_READ, MAP_PRIVATE, backing_fd, 0);
 
   const char *input_filename = argv[2];
   FILE *input_fp = fopen(input_filename, "r");
@@ -174,6 +193,11 @@ int main(int argc, const char *argv[])
     pagetable[i] = -1;
   }
 
+  int j;
+  for (j = 0; j < FRAMES; j++)
+  {
+    recentUsages[j] = -1;
+  }
   queue = initQueue(FRAMES);
 
   // Character buffer for reading lines of input file.
@@ -186,9 +210,11 @@ int main(int argc, const char *argv[])
 
   // Number of the next unallocated physical page in main memory
   unsigned char free_page = 0;
-
+  int time_count = 0;
   while (fgets(buffer, BUFFER_SIZE, input_fp) != NULL)
   {
+    printf("########################\n");
+    time_count++;
     total_addresses++;
     int logical_address = atoi(buffer);
     int offset = logical_address & OFFSET_MASK;
@@ -199,52 +225,72 @@ int main(int argc, const char *argv[])
     if (physical_page != -1)
     {
       tlb_hits++;
+      printf("TLB hit\n");
       // TLB miss
     }
     else
     {
+      printf("TLB miss\n");
       physical_page = pagetable[logical_page];
 
       // Page fault
       if (physical_page == -1)
       {
+        printf("Page fault\n");
         page_faults++;
 
         if (free_page < FRAMES)
         {
+          printf("free_page < FRAMES\n");
           physical_page = free_page;
           free_page++;
-          if (rp == 0)
-          { // FIFO
-            enqueue(queue, physical_page);
-          }
-          else
-          { // LRU
-            // save_physical_page_for_lru(physical_page);
-            printf("asd");
-          }
         }
         else
         {
+          printf("free_page >= FRAMES\n");
           if (rp == 0)
           { // FIFO
+            printf("FIFO\n");
             physical_page = dequeue(queue);
-            enqueue(queue, physical_page);
           }
           else
           { // LRU
-            // physical_page = get_physical_page_for_lru();
-            // save_physical_page_for_lru(physical_page);
-            printf("asd");
+            printf("LRU\n");
+            physical_page = get_least_recently_used_element();
           }
         }
         // Copy page from backing file into physical memory
-        memcpy(main_memory + physical_page * PAGE_SIZE, backing + logical_page * PAGE_SIZE, PAGE_SIZE);
+        printf("Copying to main_memory\n");
+        printf("Physical page: %d\n", physical_page);
+        printf("Logical page: %d\n", logical_page);
+        printf("PAGE_SIZE: %d\n", PAGE_SIZE);
 
+        memcpy(main_memory + physical_page * PAGE_SIZE, backing + logical_page * PAGE_SIZE, PAGE_SIZE);
+        printf("Copied to main_memory\n");
+
+        printf("Adding to pagetable\n");
         pagetable[logical_page] = physical_page;
+        printf("Added to pagetable\n");
+      }
+      else
+      {
+        printf("No page fault\n");
       }
 
+      printf("Adding to tlb\n");
       add_to_tlb(logical_page, physical_page);
+      printf("Added to tlb\n");
+    }
+
+    if (rp == 0)
+    { // FIFO
+      printf("FIFO\n");
+      enqueue(queue, physical_page);
+    }
+    else
+    { // LRU
+      printf("LRU\n");
+      recentUsages[physical_page] = time_count;
     }
 
     int physical_address = (physical_page << OFFSET_BITS) | offset;
