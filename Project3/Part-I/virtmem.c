@@ -213,7 +213,6 @@ int main(int argc, const char *argv[])
   int time_count = 0;
   while (fgets(buffer, BUFFER_SIZE, input_fp) != NULL)
   {
-    printf("########################\n");
     time_count++;
     total_addresses++;
     int logical_address = atoi(buffer);
@@ -225,71 +224,48 @@ int main(int argc, const char *argv[])
     if (physical_page != -1)
     {
       tlb_hits++;
-      printf("TLB hit\n");
       // TLB miss
     }
     else
     {
-      printf("TLB miss\n");
       physical_page = pagetable[logical_page];
 
       // Page fault
       if (physical_page == -1)
       {
-        printf("Page fault\n");
         page_faults++;
 
         if (free_page < FRAMES)
         {
-          printf("free_page < FRAMES\n");
           physical_page = free_page;
           free_page++;
         }
         else
         {
-          printf("free_page >= FRAMES\n");
           if (rp == 0)
           { // FIFO
-            printf("FIFO\n");
             physical_page = dequeue(queue);
           }
           else
           { // LRU
-            printf("LRU\n");
             physical_page = get_least_recently_used_element();
           }
         }
         // Copy page from backing file into physical memory
-        printf("Copying to main_memory\n");
-        printf("Physical page: %d\n", physical_page);
-        printf("Logical page: %d\n", logical_page);
-        printf("PAGE_SIZE: %d\n", PAGE_SIZE);
-
         memcpy(main_memory + physical_page * PAGE_SIZE, backing + logical_page * PAGE_SIZE, PAGE_SIZE);
-        printf("Copied to main_memory\n");
 
-        printf("Adding to pagetable\n");
         pagetable[logical_page] = physical_page;
-        printf("Added to pagetable\n");
-      }
-      else
-      {
-        printf("No page fault\n");
       }
 
-      printf("Adding to tlb\n");
       add_to_tlb(logical_page, physical_page);
-      printf("Added to tlb\n");
     }
 
     if (rp == 0)
     { // FIFO
-      printf("FIFO\n");
       enqueue(queue, physical_page);
     }
     else
     { // LRU
-      printf("LRU\n");
       recentUsages[physical_page] = time_count;
     }
 
