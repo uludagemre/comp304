@@ -34,6 +34,7 @@ struct tlbentry
   unsigned char physical;
 };
 
+// This struct was used for FIFO.
 typedef struct pagequeue
 {
   int *queueArray;
@@ -43,6 +44,7 @@ typedef struct pagequeue
   int tail;
 } PageQueue;
 
+// Initializes pagequeue for FIFO.
 PageQueue *initQueue(int numberOfFrames)
 {
   PageQueue *queue = (PageQueue *)malloc(sizeof(PageQueue));
@@ -54,6 +56,7 @@ PageQueue *initQueue(int numberOfFrames)
   return queue;
 }
 
+// Used for inserting an element to the pagequeue.
 void enqueue(PageQueue *queue, int data)
 {
   if (!(queue->numberOfFrames == queue->size))
@@ -69,6 +72,7 @@ void enqueue(PageQueue *queue, int data)
   }
 }
 
+// Used for removing the first element in the pagequeue.
 int dequeue(PageQueue *queue)
 {
   if (!(queue->size == 0))
@@ -85,8 +89,10 @@ int dequeue(PageQueue *queue)
   }
 }
 
+// Used for time counter implementation of LRU.
 int recentUsages[FRAMES];
 
+// Returns the memory frame index of least recently used physical page number.
 int get_least_recently_used_element()
 {
   int leastRecentUsedElementIndex = 0;
@@ -183,6 +189,7 @@ int main(int argc, const char *argv[])
   int j;
   for (j = 0; j < FRAMES; j++)
   {
+    // Initialize recentUsages array with -1s.
     recentUsages[j] = -1;
   }
   queue = initQueue(FRAMES);
@@ -230,16 +237,24 @@ int main(int argc, const char *argv[])
         else
         {
           if (rp == 0)
-          { // FIFO
+          { // FIFO. Physical page is the first element in the pagequeue.
             physical_page = dequeue(queue);
           }
           else
-          { // LRU
+          { // LRU. Physical page is the least recently used element.
             physical_page = get_least_recently_used_element();
           }
         }
         // Copy page from backing file into physical memory
         memcpy(main_memory + physical_page * PAGE_SIZE, backing + logical_page * PAGE_SIZE, PAGE_SIZE);
+
+        int k;
+        for (k=0; k<PAGES; k++) {
+          if (pagetable[k] == physical_page) {
+            pagetable[k] = -1;
+            break;
+          }
+        }
 
         pagetable[logical_page] = physical_page;
       }
@@ -248,11 +263,11 @@ int main(int argc, const char *argv[])
     }
 
     if (rp == 0)
-    { // FIFO
+    { // FIFO. Insert physical page to the end of the pagequeue.
       enqueue(queue, physical_page);
     }
     else
-    { // LRU
+    { // LRU. Insert physical page to recentUsages array.
       recentUsages[physical_page] = time_count;
     }
 
